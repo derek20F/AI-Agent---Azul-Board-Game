@@ -1,7 +1,7 @@
 # This file will be used in the competition
 # Please make sure the following functions are well defined
 # MCTS Version 6
-# Chen-An Fan
+# Chen-An Fan 1087032
 
 from advance_model import *
 from utils import *
@@ -144,6 +144,7 @@ class myPlayer(AdvancePlayer):
         #opponnentPS = copyGS.players[opponentId]
         #opponentMoves = opponnentPS.GetAvailableMoves(copyGS)
 
+        #print(moves[1])這是可以的!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
         
         return best_move
