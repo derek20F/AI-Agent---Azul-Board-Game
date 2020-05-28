@@ -1,5 +1,7 @@
 # This file will be used in the competition
 # Please make sure the following functions are well defined
+# MCTS Version 3
+# Chen-An Fan
 
 from advance_model import *
 from utils import *
@@ -45,85 +47,36 @@ class myPlayer(AdvancePlayer):
         #copyGrid = copyPS.grid_state
         myGridScheme = player_state.grid_scheme
         maxReward = 0
-        best_move = random.choice(moves)
+        best_move = random.choice(moves) #Randon initial the move
+        print("==================new action====================")
         for mid,fid,tgrab in moves:
-            #move = (mid,fid,tgrab)
+            move = (mid,fid,tgrab)
             rowIsFull = False
             # Reset the player_state and grid_state to original one before any move
-            copyPS = copy.deepcopy(player_state)
-            copyGridState = copyPS.grid_state
-            #print (copyPS.grid_state)
-            #print(copyGridState)
-            #print("===========================")
-            reward = 0
-            tile = tgrab.tile_type #拿出花色
-            dest = tgrab.pattern_line_dest #拿出目的地(在右邊的第幾排)
-            n2floor = tgrab.num_to_floor_line #要丟掉幾個
-            n2pattren = tgrab.num_to_pattern_line #可以放幾個
-            reward = (-0.5)*(tgrab.num_to_floor_line) + 0.5*(tgrab.num_to_pattern_line)
-            
-            if (dest+1) <= n2pattren: #this row is full
-                rowIsFull = True
-                reward = reward + 1
-            #print(reward)
-                   
-            #copyPS.ExecuteMove(self.id, best_move) #Error
+            copyGS = copy.deepcopy(game_state) # A new address
+            copyPS = copyGS.players[self.id]   # A new address
+           
+            preGridState = copy.deepcopy(copyPS.grid_state) #for debug
+            #print(preGridState)
+            # Try to execute the move outside the main
+            copyGS.ExecuteMove(self.id, move) #This will change and update the game state
+            score = copyPS.ScoreRound()[0] #this will change the grid_state and the player_state
+            bonus = copyPS.EndOfGameScore()
+            reward = score + bonus
+            print("score = " + str(score))
+            print("bonus = " + str(bonus))
+            print("reward = " + str(reward))
+            afeGridState = copyPS.grid_state
+            #print(preGridState)
+            print("---")
+            #print(afeGridState)
+            print(preGridState == afeGridState)
+            print("==============between move========================")
 
-            #update the grid state after this move
-            for i in range(5):
-                for tile in Tile:
-                    if rowIsFull: #The pattern of this row is full
-                        grid_color = int(myGridScheme[i][int(tile)])
-                        #print(self.grid_color)
-                        if int(tile) == grid_color:
-                            copyGridState[i][int(tile)] = 1
-                            print(copyGridState)
-            reward = reward + (copyPS.GetCompletedRows()) * 2 + (copyPS.GetCompletedColumns()) * 7 + (copyPS.GetCompletedSets()) *10
-            
-            print(reward)
             if reward > maxReward:
-                best_move = (mid,fid,tgrab)    
+                best_move = (mid,fid,tgrab)
                 maxReward = reward
-        ##print(myGridScheme)
-        ##for tile in Tile:
-        ##    print(int(tile)) #turn into numerical BLUE = 0    YELLOW = 1    RED = 2    BLACK = 3    WHITE = 4
-        '''
-        [[0. 1. 2. 3. 4.]
-        [1. 2. 3. 4. 0.]
-        [2. 3. 4. 0. 1.]
-        [3. 4. 0. 1. 2.]
-        [4. 0. 1. 2. 3.]]
-        '''
 
-        '''
-        for y in range(5):
-            for x in range(5):
-               print(myGrid[y][x])
-        '''
-        
-        
-        
-        
-            
-
-
-        
-        #print(myGrid[2][1]) can't
-        #print(myGrip[3][2]) can't
-        #avaMove = player_state.GetAvailableMoves
-        #print(game_state.cetre_pool) can't
-        
-        #after done the move
-        '''
-        if self.counter > 0:    
-            preScore = player_state.ScoreRound[0]
-            print(preScore)
-        '''
-
-        #print(self.counter)
-        
-        #print(self.player_trace.moves)
-        
         self.counter = self.counter + 1
         return best_move
     
