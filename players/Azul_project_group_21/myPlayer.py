@@ -81,7 +81,7 @@ class myPlayer(AdvancePlayer):
             ##print(len(moves))
             futureReward = 0
             counter = 0
-            discountFactor = 0.1
+            discountFactor = 0
             i = abs(self.id - 1)
             #beforewhileTime = time.time()
             #print(beforewhileTime-inTime)
