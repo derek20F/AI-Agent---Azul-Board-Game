@@ -1,5 +1,23 @@
+# Written by Michelle Blom, 2019
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+#
+
 # This file will be used in the competition
 # Please make sure the following functions are well defined
+# MCTS Version 6
+# Chen-An Fan
 
 from advance_model import *
 from utils import *
@@ -14,7 +32,7 @@ class myPlayer(AdvancePlayer):
     # The following function should not be changed at all
     def __init__(self,_id):
         super().__init__(_id)
-        self.counter = 0
+        
         #self.grid_color = -1
         #self.reward = 0
         #self.pt = PlayerTrace(self.id)
@@ -32,98 +50,167 @@ class myPlayer(AdvancePlayer):
     def SelectMove(self, moves, game_state):
         #move傳進來已經是avaliable move了
         #a copy of the current game state
-    
+        
+        startTime = time.time()
         player_state = game_state.players[self.id]
         #copyGS = copy.deepcopy(game_state)
         #copyPS = copyGS.players[self.id]
         #copyPS = copy.deepcopy(player_state)
         
         opponentId = abs(self.id - 1)
-        opponnent_state = game_state.players[opponentId]
+        
         
         myGridState = player_state.grid_state #這是做動作之前的State看此有沒有東西
         #copyGrid = copyPS.grid_state
         myGridScheme = player_state.grid_scheme
         maxReward = 0
-        best_move = random.choice(moves)
+        best_move = random.choice(moves) #Randon initial the move
+        #print("==================new action====================")
+        #beforeForTime = time.time()
+        #print(beforeForTime - startTime)
         for mid,fid,tgrab in moves:
-            #move = (mid,fid,tgrab)
-            rowIsFull = False
+            inTime = time.time()
+            move = (mid,fid,tgrab)
+            
             # Reset the player_state and grid_state to original one before any move
-            copyPS = copy.deepcopy(player_state)
-            copyGridState = copyPS.grid_state
-            #print (copyPS.grid_state)
-            #print(copyGridState)
-            #print("===========================")
-            reward = 0
-            tile = tgrab.tile_type #拿出花色
-            dest = tgrab.pattern_line_dest #拿出目的地(在右邊的第幾排)
-            n2floor = tgrab.num_to_floor_line #要丟掉幾個
-            n2pattren = tgrab.num_to_pattern_line #可以放幾個
-            reward = (-0.5)*(tgrab.num_to_floor_line) + 0.5*(tgrab.num_to_pattern_line)
-            
-            if (dest+1) <= n2pattren: #this row is full
-                rowIsFull = True
-                reward = reward + 1
-            #print(reward)
-                   
-            #copyPS.ExecuteMove(self.id, best_move) #Error
+            copyGS = copy.deepcopy(game_state) # A new address
+            copyPS = copyGS.players[self.id]   # A new address
+           
+            ##preGridState = copy.deepcopy(copyPS.grid_state) #for debug
+            #print(preGridState)
+            # Try to execute the move outside the main
+            copyGS.ExecuteMove(self.id, move) #This will change and update the game state
+            score = copyPS.ScoreRound()[0] #this will change the grid_state and the player_state
+            bonus = copyPS.EndOfGameScore()
+            reward = score + bonus
 
-            #update the grid state after this move
-            for i in range(5):
-                for tile in Tile:
-                    if rowIsFull: #The pattern of this row is full
-                        grid_color = int(myGridScheme[i][int(tile)])
-                        #print(self.grid_color)
-                        if int(tile) == grid_color:
-                            copyGridState[i][int(tile)] = 1
-                            print(copyGridState)
-            reward = reward + (copyPS.GetCompletedRows()) * 2 + (copyPS.GetCompletedColumns()) * 7 + (copyPS.GetCompletedSets()) *10
+            #print("score = " + str(score))
+            #print("bonus = " + str(bonus))
+            #print("reward = " + str(reward))
+            #afeGridState = copyPS.grid_state
+            #print(preGridState)
+            #print("---")
+            #print(afeGridState)
+            #print(preGridState == afeGridState)
+            #print("==============between move========================")
+            ##print("number of moves: ")
+            ##print(len(moves))
+            futureReward = 0
+            counter = 0
+            discountFactor = 0
+            i = abs(self.id - 1)
+            #beforewhileTime = time.time()
+            #print(beforewhileTime-inTime)
+            #while (time.time()-inTime) > (5 / len(moves)):
+            while True:
+                currentTime = time.time()
+                #print(currentTime - inTime)
+                if (currentTime - inTime) > (0.5 / len(moves)):
+                    #print(currentTime - inTime)
+                    #print("my time out")
+                    break
+                #print("hello")
+                
+                if not copyGS.TilesRemaining():
+                    #print("end of the round")
+                    break
+                counter = counter + 1
+                #result = self.simulatorAlwaysBest(copyGS, i)
+                result = self.simulatorRandomMove(copyGS, i)
+                i = abs(i-1)
+                if (i == self.id):
+                    futureReward = result[1]
+                    reward = reward + futureReward * (discountFactor**counter)
+                copyGS = result[0]
+                #print(time.time()-currentTime)
+                #print(reward)
+
+                
             
-            print(reward)
+
+            '''
+            #Here is the opponent
+            opponnentPS = copyGS.players[opponentId]
+            opponentMoves = opponnentPS.GetAvailableMoves(copyGS)
+            oppMaxReward = 0
+            oppBestMove = None
+            for mid,fid,tgrab in opponentMoves:
+                oppReward = 0
+                (mid,fid,tgrb) = oppMove
+                copyOppGS = copy.deepcopy(copyGS)#this should update and reset for every avaliable move
+                copyOppPS = copyOppGS.players[opponentId]
+
+                copyOppGS.ExecuteMove(opponentId, oppMove)
+                oppScore = copyOppPS.ScoreRound()[0] #this will change the grid_state and the player_state
+                oppBonus = copyOppPS.EndOfGameScore()
+                oppReward = oppScore + oppBonus
+                if oppReward >= oppMaxReward:
+                    oppBestMove = oppMove
+                    oppMaxReward = oppReward
+
+            copyGS.ExecuteMove(opponentId, oppBestMove)
+            '''
             if reward > maxReward:
-                best_move = (mid,fid,tgrab)    
+                best_move = (mid,fid,tgrab)
                 maxReward = reward
-        ##print(myGridScheme)
-        ##for tile in Tile:
-        ##    print(int(tile)) #turn into numerical BLUE = 0    YELLOW = 1    RED = 2    BLACK = 3    WHITE = 4
-        '''
-        [[0. 1. 2. 3. 4.]
-        [1. 2. 3. 4. 0.]
-        [2. 3. 4. 0. 1.]
-        [3. 4. 0. 1. 2.]
-        [4. 0. 1. 2. 3.]]
-        '''
 
-        '''
-        for y in range(5):
-            for x in range(5):
-               print(myGrid[y][x])
-        '''
-        
-        
-        
-        
-            
+        #copyGS = copy.deepcopy(game_state)
+        #myPS = copyGS.players[self.id]
+        #copyGS.ExecuteMove(self.id, best_move) #update the game state
+        #opponnentPS = copyGS.players[opponentId]
+        #opponentMoves = opponnentPS.GetAvailableMoves(copyGS)
 
 
         
-        #print(myGrid[2][1]) can't
-        #print(myGrip[3][2]) can't
-        #avaMove = player_state.GetAvailableMoves
-        #print(game_state.cetre_pool) can't
-        
-        #after done the move
-        '''
-        if self.counter > 0:    
-            preScore = player_state.ScoreRound[0]
-            print(preScore)
-        '''
-
-        #print(self.counter)
-        
-        #print(self.player_trace.moves)
-        
-        self.counter = self.counter + 1
         return best_move
     
+
+    # this is usd to execute the bestmove for one player
+    def simulatorAlwaysBest(self, GS, opponentId):
+        #should not modify the input game state
+        #copyGS = copy.deepcopy(GS)
+        #print("simulatro is running")
+        copyGS  = GS
+        # opponent turn
+        opponnentPS = copyGS.players[opponentId]
+        opponentMoves = opponnentPS.GetAvailableMoves(copyGS)
+        oppMaxReward = 0
+        oppBestMove = None
+        for mid,fid,tgrab in opponentMoves:
+            
+            oppReward = 0
+            oppMove = (mid,fid,tgrab)
+            
+            copyOppGS = copy.deepcopy(copyGS)#this should update and reset for every avaliable move
+            
+            copyOppPS = copyOppGS.players[opponentId]
+            copyOppGS.ExecuteMove(opponentId, oppMove)
+            oppScore = copyOppPS.ScoreRound()[0] #this will change the grid_state and the player_state
+            oppBonus = copyOppPS.EndOfGameScore()
+            oppReward = oppScore + oppBonus
+            
+            if oppReward >= oppMaxReward:
+                oppBestMove = oppMove
+                oppMaxReward = oppReward
+
+        copyGS.ExecuteMove(opponentId, oppBestMove)
+
+        return (copyGS, oppMaxReward)
+
+
+        # this is usd to execute the bestmove for one player
+    def simulatorRandomMove(self, GS, opponentId):
+        #should not modify the input game state
+        #copyGS = copy.deepcopy(GS)
+        #print("simulatro is running")
+        copyGS  = GS
+        # opponent turn
+        opponnentPS = copyGS.players[opponentId]
+        opponentMoves = opponnentPS.GetAvailableMoves(copyGS)
+        opponrntMove = random.choice(opponentMoves)
+
+        copyGS.ExecuteMove(opponentId, opponrntMove)
+        oppScore = opponnentPS.ScoreRound()[0] #this will change the grid_state and the player_state
+        oppBonus = opponnentPS.EndOfGameScore()
+        oppReward = oppScore + oppBonus
+        return (copyGS, oppReward)
