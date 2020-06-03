@@ -71,7 +71,7 @@ class myPlayer(AdvancePlayer):
 
             futureReward = 0
             counter = 0
-            discountFactor = 0.1
+            discountFactor = 0
             i = abs(self.id - 1)
 
             while True:
