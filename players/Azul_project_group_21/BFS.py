@@ -13,7 +13,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
-# 1066384, Yu-Ting Liu
+# Yu-Ting Liu
 
 from advance_model import *
 import utils

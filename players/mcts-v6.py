@@ -1,7 +1,7 @@
 # This file will be used in the competition
 # Please make sure the following functions are well defined
 # MCTS Version 6
-# Chen-An Fan 1087032
+# Chen-An Fan
 
 from advance_model import *
 from utils import *
