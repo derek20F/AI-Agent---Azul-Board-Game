@@ -1,3 +1,7 @@
+# AI Agent for Azul Board Game
+## Summary
+* Created an autonomous agent to play the Azul board game by implementing Monte Carlo Tree Search
+
 <!-- # AZUL
 This repository contains a framework to support policy learning for the boardgame AZUL, published by Plan B Games. The purpose of this framework is to allow students to implement algorithms for learning AI players for the game and evaluate the performance of these players against human/other AI players. 
 
